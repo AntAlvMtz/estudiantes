@@ -1,5 +1,8 @@
 import { Injectable } from '@angular/core';
 import { Student } from "../models/student";
+import { map } from 'rxjs/operators';
+import { AngularFirestore } from '@angular/fire/compat/firestore';
+import { Observable } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
@@ -8,8 +11,8 @@ export class StudentService {
 
   private students: Student[];
 
-  constructor() {
-    this.students = [
+  constructor(private firestore: AngularFirestore) {
+    /*this.students = [
       {
         controlnumber: "02400391",
         age: 38,
@@ -40,28 +43,49 @@ export class StudentService {
         nip: 919,
         photo: 'https://picsum.photos/600/?random=3'
       }
-    ];
+    ];*/
   }
 
-  public getStudents(): Student[]{
-    return this.students;
+  public getStudents(): Observable<Student []>{
+    return this.firestore.collection('students').snapshotChanges().pipe(
+      map(actions => {
+        return actions.map(a =>{
+          const data = a.payload.doc.data() as Student;
+          const id = a.payload.doc.id;
+          return { id, ...data };
+        })
+      })
+    )
   }
 
-  public removeStudent(pos: number): Student[]{
-    this.students.splice(pos, 1);
-    return this.students;
+  public removeStudent(id: string){
+    // this.students.splice(pos, 1);
+    // return this.students;
+    this.firestore.collection('students').doc(id).delete();
   }
 
-  public getStudentByControlNumber(controlnumber: string): Student {
+  /*public getStudentByControlNumber(controlnumber: string): Student {
     let item: Student = this.students.find((student)=> {
       return student.controlnumber===controlnumber;
     });
     return item;
+  }*/
+
+  public getStudentById(id: string){
+    let result = this.firestore.collection('students').doc(id).valueChanges();
+    return result;
   }
 
-  public newStudent(student: Student): Student[] {
-    this.students.push(student);
-    return this.students;
+  public newStudent(student: Student) {
+    /*this.students.push(student);
+    return this.students;*/
+    this.firestore.collection('students').add(student);
+  }
+
+  public modifyStudent(id: string,student: Student) {
+    /*this.students.push(student);
+    return this.students;*/
+    this.firestore.collection('students').doc(id).update(student);
   }
 
 }

@@ -2,48 +2,56 @@ import { Component, OnInit } from '@angular/core';
 import { FormGroup, FormBuilder, Validators } from '@angular/forms';
 import { Student } from '../models/student';
 import { StudentService } from '../services/student.service';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { ToastController } from '@ionic/angular';
 
+
 @Component({
-  selector: 'app-new-student',
-  templateUrl: './new-student.page.html',
-  styleUrls: ['./new-student.page.scss'],
+  selector: 'app-modify-student',
+  templateUrl: './modify-student.page.html',
+  styleUrls: ['./modify-student.page.scss'],
 })
-export class NewStudentPage implements OnInit {
+export class ModifyStudentPage implements OnInit {
 
   public student: Student;
+  public studentModify: Student;
+  public docId: string;
   public myForm: FormGroup;
-  public validationMessages: object;
+  public validatorMessages: object;
 
-  constructor(private studentService: StudentService, private fb: FormBuilder,private router:Router,private toastController: ToastController) { }
+  constructor(private studentService: StudentService, private fb: FormBuilder,private router:Router,private toastController: ToastController, private activatedRouter: ActivatedRoute) { 
+    this.student = {
+      controlnumber: '',
+      name: '',
+      curp: '',
+      age: 0,
+      nip: 0,
+      email: '',
+      career: '',
+      photo: ''
+    }
+  }
 
   ngOnInit() {
-    this.myForm = this.fb.group({
-      /*controlnumber:["", Validators.compose([Validators.minLength(8), Validators.required, Validators.pattern('^[0-9]+$')])],
-      name:["", Validators.required],
-      curp:["", Validators.compose([Validators.required, Validators.pattern('^[A-Z]{1}[AEIOU]{1}[A-Z]{2}[0-9]{2}(0[1-9]|1[0-2])(0[1-9]|1[0-9]|2[0-9]|3[0-1])[HM]{1}(AS|BC|BS|CC|CS|CH|CL|CM|DF|DG|GT|GR|HG|JC|MC|MN|MS|NT|NL|OC|PL|QT|QR|SP|SL|SR|TC|TS|TL|VZ|YN|ZS|NE)[B-DF-HJ-NP-TV-Z]{3}[0-9A-Z]{1}[0-9]{1}$')])],
-      age:[0, Validators.compose([Validators.required, Validators.min(17)])],
-      nip:[0, Validators.compose([Validators.required, Validators.min(10)])],
-      email:["", Validators.compose([Validators.required, Validators.email])],
-      career:["", Validators.required],
-      photo:["", Validators.compose([Validators.required])]*/
-      controlnumber:["02400391", Validators.compose([Validators.minLength(8), Validators.required, Validators.pattern('^[0-9]+$')])],
-      name:["ISRAEL ARJONA", Validators.required],
-      curp:["AOVI840917HNTRZS09", Validators.compose([Validators.required, Validators.pattern('^[A-Z]{1}[AEIOU]{1}[A-Z]{2}[0-9]{2}(0[1-9]|1[0-2])(0[1-9]|1[0-9]|2[0-9]|3[0-1])[HM]{1}(AS|BC|BS|CC|CS|CH|CL|CM|DF|DG|GT|GR|HG|JC|MC|MN|MS|NT|NL|OC|PL|QT|QR|SP|SL|SR|TC|TS|TL|VZ|YN|ZS|NE)[B-DF-HJ-NP-TV-Z]{3}[0-9A-Z]{1}[0-9]{1}$')])],
-      age:[38, Validators.compose([Validators.required, Validators.min(17)])],
-      nip:[789, Validators.compose([Validators.required, Validators.min(10)])],
-      email:["iarjona@ittepic.edu.mx", Validators.compose([Validators.required, Validators.email])],
-      career:["ISC", Validators.required],
-      photo:["https://picsum.photos/200/300", Validators.compose([Validators.required])]
+    this.activatedRouter.queryParams.subscribe((params) => {
+      this.studentService.getStudentById(params.id).subscribe(item=>{
+        this.student = item as Student;
+        this.docId = params.id;
+      });
     });
 
-    this.validationMessages = {
-      'controlnumber': [
-        { type: 'required', message: "Debe capturar el número de control"},
-        { type: 'minlength', message: "El número de control parece estar mal formado"},
-        { type: 'pattern', message: "El número de control debe contener sólo números"}
-      ],
+    this.myForm = this.fb.group({
+      name:["", Validators.required],
+      curp:["", Validators.compose([Validators.required, Validators.pattern('^[A-Z]{1}[AEIOU]{1}[A-Z]{2}[0-9]{2}(0[1-9]|1[0-2])(0[1-9]|1[0-9]|2[0-9]|3[0-1])[HM]{1}(AS|BC|BS|CC|CS|CH|CL|CM|DF|DG|GT|GR|HG|JC|MC|MN|MS|NT|NL|OC|PL|QT|QR|SP|SL|SR|TC|TS|TL|VZ|YN|ZS|NE)[B-DF-HJ-NP-TV-Z]{3}[0-9A-Z]{1}[0-9]{1}$')])],
+      age:["", Validators.compose([Validators.required, Validators.min(17)])],
+      nip:["", Validators.compose([Validators.required, Validators.min(10)])],
+      email:["", Validators.compose([Validators.required, Validators.email])],
+      career:["", Validators.required],
+      photo:["", Validators.compose([Validators.required])]
+    });
+    
+
+    this.validatorMessages = {
       'name': [
         { type: 'required', message: "Debe capturar el nombre"}
       ],
@@ -74,7 +82,7 @@ export class NewStudentPage implements OnInit {
 
   async presentToast() {
     const toast = await this.toastController.create({
-      message: 'Alumno agregado',
+      message: 'Alumno modificado',
       duration: 1500,
       position: 'bottom'
     });
@@ -82,9 +90,9 @@ export class NewStudentPage implements OnInit {
     await toast.present();
   }
 
-  public newStudent() {
-    this.student = {
-      controlnumber: this.myForm.controls.controlnumber.value,
+  public modifyStudent() {
+    this.studentModify = {
+      controlnumber: this.student.controlnumber,
       name: this.myForm.controls.name.value,
       curp: this.myForm.controls.curp.value,
       age: this.myForm.controls.age.value,
@@ -93,7 +101,7 @@ export class NewStudentPage implements OnInit {
       career: this.myForm.controls.career.value,
       photo: this.myForm.controls.photo.value,
     }
-    this.studentService.newStudent(this.student)
+    this.studentService.modifyStudent(this.docId,this.studentModify)
     this.presentToast();
     
   }
